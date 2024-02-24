@@ -2,57 +2,79 @@ from langchain.document_loaders import DirectoryLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.documents import Document
-from langchain.chains import create_retrieval_chain
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+from langchain.tools.retriever import create_retriever_tool
 from langchain_core.prompts import ChatPromptTemplate
-
-
+from langchain_openai import ChatOpenAI
+from fastapi import FastAPI
+from langchain import hub
+from langchain.agents import create_openai_functions_agent
+from langchain.agents import AgentExecutor
+from langchain.pydantic_v1 import BaseModel, Field
+from langchain_core.messages import BaseMessage
+from langserve import add_routes
+from typing import List
 
 
 from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
 
 
 
 load_dotenv()
 
 DATA_DIR = 'data/promptior'
-PROMPT_TEMPLATE = ChatPromptTemplate.from_template("""Answer the following question based only on the provided context:
 
-<context>
-{context}
-</context>
-
-Question: {input}""")
-
-def load_data():
-    loader = DirectoryLoader(DATA_DIR, glob='*.md')
-    return loader.load()
+loader = DirectoryLoader(DATA_DIR, glob='*.md')
+data = loader.load()
 
 #no hacemos text splitter son textos chiquitos
+text_splitter = RecursiveCharacterTextSplitter()
+documents = text_splitter.split_documents(data)
+print(len(documents))
 
-def store_data_in_db(data):
-    embeddings = OpenAIEmbeddings()
-    vector = FAISS.from_documents(data, embeddings)
-    return vector
+embeddings = OpenAIEmbeddings()
+vector = FAISS.from_documents(documents, embeddings)
 
-def asking_question(vector, input_question):
-    llm = ChatOpenAI()
-    document_chain = create_stuff_documents_chain(llm, PROMPT_TEMPLATE)
-    retriever = vector.as_retriever()
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
-    response = retrieval_chain.invoke({"input": input_question})
-    print(response["answer"])
+retriever = vector.as_retriever()
+retriever_tool = create_retriever_tool(
+    retriever,
+    "promptior_search",
+    "Search for information about Promptior. For any questions about Promptior, you must use this tool!",
+)
+tools = [retriever_tool]
 
 
 
 
-def main():
-    data = load_data()
-    vector = store_data_in_db(data)
-    input_question = "en qué año se fundó promptior?"
-    asking_question(vector, input_question)
+prompt = hub.pull("hwchase17/openai-functions-agent")
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+agent = create_openai_functions_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent,tools = tools, verbose=True)
+app = FastAPI(
+    title="Chatbot Promptior",
+    version="1.0",
+    description="A simple API server using LangChain's Runnable interfaces",
+    )
 
+class Input(BaseModel):
+    input: str
+    chat_history: List[BaseMessage] = Field(
+        ...,
+        extra={"widget": {"type": "chat", "input": "location"}},
+    )
+
+
+class Output(BaseModel):
+    output: str
+
+add_routes(
+    app,
+    agent_executor.with_types(input_type=Input, output_type=Output),
+    path="/agent",
+)
 
 if __name__ == '__main__':
-    main()
+    import uvicorn
+
+    uvicorn.run(app, host="localhost", port=8000)
