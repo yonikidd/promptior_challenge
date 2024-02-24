@@ -1,5 +1,3 @@
-# Sobre Promptior
-
 En noviembre de 2022 sale a la luz ChatGPT, provocando un gran impacto y cuestionando principios hasta el momento incuestionables: La creatividad es una cualidad exclusivamente humana.
 
 La velocidad de estos avances tecnológicos, provoca en los líderes una presión sin precedentes por incorporar la IA en su negocio.
