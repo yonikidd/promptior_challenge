@@ -57,7 +57,7 @@ def create_agent_executor():
 if __name__ == '__main__':
     load_dotenv()
 
-    DATA_DIR = 'data/promptior'
+    DATA_DIR = "../data/promptior"
     data = load_data(DATA_DIR)
 
     documents = split_documents(data)
