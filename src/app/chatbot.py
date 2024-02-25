@@ -1,10 +1,8 @@
 from langchain.document_loaders import DirectoryLoader
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.tools.retriever import create_retriever_tool
-from langchain_core.prompts import ChatPromptTemplate
 from langchain import hub
 from langchain.agents import create_openai_functions_agent, AgentExecutor
 from langchain.pydantic_v1 import BaseModel, Field
