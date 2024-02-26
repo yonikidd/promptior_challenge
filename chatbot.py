@@ -1,4 +1,4 @@
-from langchain.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import DirectoryLoader
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -12,6 +12,12 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 from typing import List
 
+load_dotenv()
+app = FastAPI(
+        title="Chatbot Promptior",
+        version="1.0",
+        description="A simple API server using LangChain's Runnable interfaces",
+    )
 
 class Input(BaseModel):
         input: str
@@ -53,11 +59,12 @@ def create_agent_executor():
     agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
     return agent_executor
 
-     
-if __name__ == '__main__':
-    load_dotenv()
 
-    DATA_DIR = "./data/promptior"
+
+
+if __name__ == '__main__':
+
+    DATA_DIR = "data/promptior"
     data = load_data(DATA_DIR)
 
     documents = split_documents(data)
@@ -71,13 +78,6 @@ if __name__ == '__main__':
 
     agent_executor = create_agent_executor()
 
-    app = FastAPI(
-        title="Chatbot Promptior",
-        version="1.0",
-        description="A simple API server using LangChain's Runnable interfaces",
-    )
-
     add_routes(app, agent_executor.with_types(input_type=Input, output_type=Output), path="/agent")
-
     import uvicorn
-    uvicorn.run(app, host="localhost", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
