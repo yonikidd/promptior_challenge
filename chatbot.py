@@ -62,22 +62,23 @@ def create_agent_executor():
 
 
 
+DATA_DIR = "data/promptior"
+data = load_data(DATA_DIR)
+
+documents = split_documents(data)
+
+embeddings = create_embeddings(documents)
+tools = create_retriever(
+    embeddings,
+    "promptior_search",
+    "Search for information about Promptior. For any questions about Promptior, you must use this tool!",
+)
+
+agent_executor = create_agent_executor()
+
+add_routes(app, agent_executor.with_types(input_type=Input, output_type=Output), path="/agent")
+
 if __name__ == '__main__':
-
-    DATA_DIR = "data/promptior"
-    data = load_data(DATA_DIR)
-
-    documents = split_documents(data)
-
-    embeddings = create_embeddings(documents)
-    tools = create_retriever(
-        embeddings,
-        "promptior_search",
-        "Search for information about Promptior. For any questions about Promptior, you must use this tool!",
-    )
-
-    agent_executor = create_agent_executor()
-
-    add_routes(app, agent_executor.with_types(input_type=Input, output_type=Output), path="/agent")
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, loop="asyncio")
+

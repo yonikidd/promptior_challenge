@@ -5,3 +5,8 @@ langserve
 fastapi
 python-dotenv
 uvicorn
+unstructured
+unstructured[md]
+faiss-cpu
+langchainhub
+sse_starlette
